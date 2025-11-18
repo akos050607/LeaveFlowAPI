@@ -1,6 +1,8 @@
 using LeaveFlowAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using LeaveFlowAPI.Interfaces;
+using LeaveFlowAPI.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,9 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+builder.Services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -22,6 +27,12 @@ builder.Services.AddDbContext<PresenceDbContext>(options =>
 
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSwaggerGen(options =>
+{
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    options.IncludeXmlComments(xmlPath);
+});
 var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -29,14 +40,6 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-/*builder.Services.AddSwaggerGen(options =>
-{
-    // EZT A BLOKKOT ADD HOZZÁ:
-    // Ez megkeresi a generált XML fájlt és betölti
-    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFilename);
-    options.IncludeXmlComments(xmlPath);
-});*/
 
 app.UseSwagger();
 
@@ -48,4 +51,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

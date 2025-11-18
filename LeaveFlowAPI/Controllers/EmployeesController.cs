@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using LeaveFlowAPI.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using LeaveFlowAPI.Interfaces;
 
 namespace LeaveFlowAPI.Controllers
 {
@@ -10,105 +8,85 @@ namespace LeaveFlowAPI.Controllers
     [Route("api/[controller]")]
     public class EmployeesController : ControllerBase
     {
-        private readonly PresenceDbContext _context;
+        private readonly IEmployeeRepository _repository;
 
-        public EmployeesController(PresenceDbContext context)
+        public EmployeesController(IEmployeeRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
-        // === READ ===
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
         {
-            return await _context.Employees.ToListAsync();
+            var employees = await _repository.GetEmployeesAsync();
+            return Ok(employees);
         }
 
-        // === READ ID ===
         [HttpGet("{id}")]
         public async Task<ActionResult<Employee>> GetEmployeeById(int id)
         {
-            var employee = await _context.Employees.FindAsync(id);
+            var employee = await _repository.GetEmployeeByIdAsync(id);
 
-            if (employee == null)
-            {
-                return NotFound(); // 404 error
-            }
-
-            return Ok(employee);
-        }
-
-        // === READ LEAVE REQUESTS FOR EMPLOYEE ===
-        [HttpGet("{employeeId}/leaverequests")]
-        public async Task<ActionResult<IEnumerable<LeaveRequest>>> GetLeaveRequestsForEmployee(int employeeId)
-        {
-            var employeeExists = await _context.Employees.AnyAsync(e => e.Id == employeeId);
-            if (!employeeExists)
-            {
-                return NotFound("Employee not found.");
-            }
-
-            var requests = await _context.LeaveRequests
-                                         .Where(lr => lr.EmployeeId == employeeId)
-                                         .ToListAsync();
-
-            return Ok(requests);
-        }
-
-        // === CREATE ===
-        [HttpPost]
-        public async Task<ActionResult<Employee>> CreateEmployee(Employee employee)
-        {
-            _context.Employees.Add(employee);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetEmployeeById), new { id = employee.Id }, employee);
-        }
-
-        // === UPDATE ===
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEmployee(int id, Employee employee)
-        {
-            if (id != employee.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(employee).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Employees.Any(e => e.Id == id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent(); // 204 status code
-        }
-
-        // === DELETE ===
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEmployee(int id)
-        {
-            var employee = await _context.Employees.FindAsync(id);
             if (employee == null)
             {
                 return NotFound();
             }
 
-            _context.Employees.Remove(employee);
-            await _context.SaveChangesAsync();
+            return Ok(employee);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Employee>> CreateEmployee(Employee employee)
+        {
+            await _repository.CreateEmployeeAsync(employee);
+            await _repository.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetEmployeeById), new { id = employee.Id }, employee);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateEmployee(int id, Employee employee)
+        {
+            if (id != employee.Id)
+            {
+                return BadRequest("Az URL-ben lévő ID nem egyezik a testben lévő ID-vel.");
+            }
+
+            if (!await _repository.ExistsAsync(id))
+            {
+                return NotFound();
+            }
+
+            await _repository.UpdateAsync(employee);
+            await _repository.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteEmployee(int id)
+        {
+            if (!await _repository.ExistsAsync(id))
+            {
+                return NotFound();
+            }
+
+            await _repository.DeleteAsync(id);
+            await _repository.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpGet("{employeeId}/leaverequests")]
+        public async Task<ActionResult<IEnumerable<LeaveRequest>>> GetLeaveRequestsForEmployee(int employeeId)
+        {
+            if (!await _repository.ExistsAsync(employeeId))
+            {
+                return NotFound("Alkalmazott nem található.");
+            }
+
+            var requests = await _repository.GetLeaveRequestsForEmployeeAsync(employeeId);
+            return Ok(requests);
         }
     }
 }

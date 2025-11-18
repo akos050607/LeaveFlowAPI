@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using LeaveFlowAPI.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using LeaveFlowAPI.Interfaces;
 
 namespace LeaveFlowAPI.Controllers
 {
@@ -10,31 +8,25 @@ namespace LeaveFlowAPI.Controllers
     [Route("api/[controller]")]
     public class DepartmentsController : ControllerBase
     {
-        private readonly PresenceDbContext _context;
+        private readonly IDepartmentRepository _repository;
 
-        public DepartmentsController(PresenceDbContext context)
+        public DepartmentsController(IDepartmentRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
-        // GET: /api/departments
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Department>>> GetDepartments()
         {
-            var departments = await _context.Departments
-                                            .Include(d => d.Manager)
-                                            .Include(d => d.Employees)
-                                            .ToListAsync();
+            // Itt hívjuk meg a repository "okos" metódusát, ami tartalmazza az Include-okat.
+            var departments = await _repository.GetAllAsync();
             return Ok(departments);
         }
 
-        // GET: /api/departments/1/employees
         [HttpGet("{id}/employees")]
         public async Task<ActionResult<IEnumerable<Employee>>> GetEmployeesForDepartment(int id)
         {
-            var employees = await _context.Employees
-                                          .Where(e => e.DepartmentId == id)
-                                          .ToListAsync();
+            var employees = await _repository.GetEmployeesByDepartmentIdAsync(id);
             return Ok(employees);
         }
     }
