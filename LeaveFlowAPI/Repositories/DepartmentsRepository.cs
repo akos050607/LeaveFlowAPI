@@ -15,7 +15,6 @@ namespace LeaveFlowAPI.Repositories
 
         public async Task<IEnumerable<Department>> GetAllAsync()
         {
-            // Itt van elrejtve a komplex Include logika!
             return await _context.Departments
                                  .Include(d => d.Manager)
                                  .Include(d => d.Employees)

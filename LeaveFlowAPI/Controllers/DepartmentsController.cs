@@ -18,7 +18,6 @@ namespace LeaveFlowAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Department>>> GetDepartments()
         {
-            // Itt hívjuk meg a repository "okos" metódusát, ami tartalmazza az Include-okat.
             var departments = await _repository.GetAllAsync();
             return Ok(departments);
         }
