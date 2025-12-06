@@ -29,11 +29,11 @@ The project includes a .NET-based REST API and its corresponding Angular fronten
 
 ## Technologies
 
-| **Backend** | .NET 9, ASP.NET Core Web API, C# |
-| **Frontend** | Angular v18, TypeScript, HTML5, CSS |
-| **Database** | Microsoft SQL Server 2022 (Docker) |
-| **ORM** | Entity Framework Core |
-| **Tools** | Swagger (OpenAPI), Docker, Git |
+* **Backend** .NET 9, ASP.NET Core Web API, C# |
+* **Frontend** Angular v18, TypeScript, HTML5, CSS |
+* **Database** Microsoft SQL Server 2022 (Docker) |
+* **ORM** Entity Framework Core |
+* **Tools** Swagger (OpenAPI), Docker, Git |
 
 ---
 
